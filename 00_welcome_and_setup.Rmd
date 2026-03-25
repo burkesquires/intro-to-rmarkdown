@@ -1,0 +1,163 @@
+---
+title: "R Markdown for Scientists — Welcome & Setup"
+subtitle: "NIEHS 3-Hour Workshop"
+author: "NIEHS Training"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: true
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+# Welcome! {.unnumbered}
+
+Welcome to **R Markdown for Scientists**, a hands-on workshop designed for
+researchers at the National Institute of Environmental Health Sciences (NIEHS).
+
+By the end of this 3-hour training, you will be able to:
+
+- Write reproducible reports that combine prose, code, and results
+- Control how code and output appear in your documents
+- Create publication-quality tables and figures
+- Add equations, citations, and cross-references
+- Knit documents to HTML, Word, and PDF formats
+
+## Workshop Agenda
+
+| Module | Topic | Time |
+|--------|-------|------|
+| 0 | Welcome & Setup (this notebook) | 10 min |
+| 1 | R Markdown Basics: YAML, Markdown, and Knitting | 25 min |
+| 2 | Code Chunks and Inline Code | 30 min |
+| 3 | Tables and Data Display | 25 min |
+| — | Break | 10 min |
+| 4 | Visualizations and Figure Control | 25 min |
+| 5 | Scientific Writing: Equations, Citations, Parameters | 20 min |
+| 6 | Output Formats, Themes, and Templates | 15 min |
+| 7 | Capstone: Build a Complete Analysis Report | 20 min |
+
+## What is R Markdown?
+
+R Markdown is a file format (`.Rmd`) that lets you combine:
+ 
+1. **Narrative text** written in Markdown (a simple formatting language)
+2. **R code** that runs and produces results
+3. **Output** — figures, tables, and statistics — embedded directly in the document
+
+When you **knit** an `.Rmd` file, R executes all the code, inserts the results,
+and produces a polished report in HTML, Word, PDF, or other formats.
+
+### Why R Markdown for NIEHS Research?
+
+- **Reproducibility**: Your report IS the analysis. Anyone can re-run it and get
+  the same results.
+- **FAIR principles**: Code, data, and narrative are bundled together in a
+  transparent, shareable format.
+- **Efficiency**: Change your data or methods, re-knit, and the entire report
+  updates — no copy-paste errors.
+- **Collaboration**: Share `.Rmd` files via GitHub and your whole team can see
+  exactly how results were generated.
+
+# Setting Up Your Environment
+
+## Posit Cloud Prerequisites
+
+You should already have:
+
+- A **Posit Cloud** account (free tier is fine) — [posit.cloud](https://posit.cloud)
+- A project open in Posit Cloud (create a new one if needed)
+
+## Installing Required Packages
+
+Run the code chunk below to install the packages we will use throughout the
+workshop. **This may take a few minutes on Posit Cloud** — that is normal.
+
+```{r install-packages, eval=FALSE}
+# Run this once — you do NOT need to run it every time you open the project
+install.packages(c(
+  "rmarkdown",    # Core R Markdown engine (likely already installed)
+  "knitr",        # Code chunk processing
+  "tidyverse",    # Data manipulation and ggplot2
+  "kableExtra",   # Beautiful tables
+  "DT",           # Interactive HTML tables
+  "plotly",       # Interactive plots
+  "broom",        # Tidy model output
+  "here"          # Portable file paths
+))
+```
+
+> **Posit Cloud note**: The `rmarkdown` and `knitr` packages come pre-installed on
+> Posit Cloud projects. You mainly need to install the table and visualization
+> packages listed above.
+
+## Verify Your Setup
+
+Run this chunk to confirm everything is working:
+
+```{r verify-setup}
+# Check that key packages load
+library(rmarkdown)
+library(knitr)
+library(tidyverse)
+
+cat("R version:", R.version.string, "\n")
+cat("rmarkdown version:", as.character(packageVersion("rmarkdown")), "\n")
+cat("knitr version:", as.character(packageVersion("knitr")), "\n")
+cat("\n✓ Setup looks good! You're ready to begin.\n")
+```
+
+# How to Use These Notebooks
+
+Each notebook in this workshop is itself an R Markdown document. You are
+learning R Markdown *by using R Markdown*.
+
+**Two ways to work through the material:**
+
+1. **Run chunks interactively**: Click the green "play" button (▶) on any code
+   chunk to run it in place and see the results below the chunk.
+2. **Knit the whole document**: Click the **Knit** button (or press
+   `Ctrl+Shift+K` / `Cmd+Shift+K`) to render the entire notebook into an HTML
+   report.
+
+**Try it now!** Click the **Knit** button at the top of this document to see what
+the rendered output looks like.
+
+# Quick Tour of the RStudio Interface
+
+When you have an `.Rmd` file open, notice these key areas:
+
+- **Source pane** (upper left): Where you edit the `.Rmd` file
+- **Knit button**: At the top of the source pane — click to render
+- **Run buttons**: Green arrows on each code chunk to run interactively
+- **Console** (lower left): Where R code executes when you run chunks
+- **Output/Viewer** (lower right): Where knitted HTML appears
+
+## A Note on PDF Output
+
+Throughout this workshop we will primarily knit to **HTML**, which works
+perfectly on Posit Cloud with no extra setup.
+
+If you want to knit to **PDF**, you need a LaTeX installation. On Posit Cloud
+you can install TinyTeX:
+
+```{r install-tinytex, eval=FALSE}
+# Only run this if you want PDF output (optional — takes several minutes)
+install.packages("tinytex")
+tinytex::install_tinytex()
+```
+
+> We recommend sticking with HTML output during the workshop. It is faster, 
+> supports interactive features (like clickable tables), and avoids LaTeX
+> troubleshooting.
+
+---
+
+**You're all set!** Open the next notebook: `01_rmarkdown_basics.Rmd`

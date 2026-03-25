@@ -1,0 +1,290 @@
+---
+title: "Module 5: Scientific Writing in R Markdown"
+subtitle: "Equations, Citations, Cross-References, and Parameters"
+author: "NIEHS Training"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: true
+    code_folding: show
+params:
+  chemical: "PFOA"
+  threshold: 4.0
+  study_year: 2024
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+```
+
+# LaTeX Equations
+
+R Markdown supports LaTeX math notation, which renders beautifully in HTML and
+PDF output.
+
+## Inline Equations
+
+Surround with single dollar signs: `$E = mc^2$` renders as $E = mc^2$.
+
+More examples:
+
+| Syntax | Renders as |
+|--------|-----------|
+| `$\alpha = 0.05$` | $\alpha = 0.05$ |
+| `$R^2 = 0.87$` | $R^2 = 0.87$ |
+| `$\beta_1 = 0.42$` | $\beta_1 = 0.42$ |
+| `$p < 0.001$` | $p < 0.001$ |
+| `$\mu \pm \sigma$` | $\mu \pm \sigma$ |
+| `$\text{BMI} = \frac{kg}{m^2}$` | $\text{BMI} = \frac{kg}{m^2}$ |
+| `$\log_{10}(\text{PFOA})$` | $\log_{10}(\text{PFOA})$ |
+
+## Display Equations
+
+Surround with double dollar signs for centered, display-style equations:
+
+```
+$$Y_i = \beta_0 + \beta_1 X_{i1} + \beta_2 X_{i2} + \epsilon_i$$
+```
+
+$$Y_i = \beta_0 + \beta_1 X_{i1} + \beta_2 X_{i2} + \epsilon_i$$
+
+A dose-response model:
+
+$$\text{Response} = \frac{E_{\max} \cdot C^n}{EC_{50}^n + C^n}$$
+
+Where $E_{\max}$ is the maximum effect, $C$ is concentration, $EC_{50}$ is the
+half-maximal effective concentration, and $n$ is the Hill coefficient.
+
+## Common Patterns for Environmental Health
+
+```
+$$\text{HQ} = \frac{\text{CDI}}{\text{RfD}}$$
+```
+
+$$\text{HQ} = \frac{\text{CDI}}{\text{RfD}}$$
+
+Where HQ is the hazard quotient, CDI is the chronic daily intake, and RfD is
+the reference dose.
+
+```
+$$\text{LADD} = \frac{C \times IR \times EF \times ED}{BW \times AT}$$
+```
+
+$$\text{LADD} = \frac{C \times IR \times EF \times ED}{BW \times AT}$$
+
+
+# Parameterized Reports
+
+One of R Markdown's most powerful features is **parameters**. You define
+parameters in the YAML header, and they become variables you can use anywhere
+in the document.
+
+## How Parameters Work
+
+Look at the YAML header of this file — it includes:
+
+````
+params:
+  chemical: "PFOA"
+  threshold: 4.0
+  study_year: 2024
+````
+
+You access parameters with `params$chemical`, `params$threshold`, etc.
+
+## Using Parameters
+
+This report analyzes **`r params$chemical`** data from **`r params$study_year`**
+using a threshold of **`r params$threshold` ng/mL**.
+
+```{r param-demo}
+# Generate data based on parameter
+set.seed(42)
+exposure_data <- data.frame(
+  participant = 1:100,
+  concentration = round(rlnorm(100, meanlog = 0.8, sdlog = 0.9), 2)
+)
+
+n_above <- sum(exposure_data$concentration > params$threshold)
+pct_above <- round(n_above / nrow(exposure_data) * 100, 1)
+```
+
+Of the `r nrow(exposure_data)` participants, **`r n_above` (`r pct_above`%)**
+had serum `r params$chemical` concentrations exceeding the
+`r params$threshold` ng/mL threshold.
+
+```{r param-plot, fig.width=7, fig.height=4, echo=FALSE}
+ggplot(exposure_data, aes(x = concentration)) +
+  geom_histogram(fill = "#0D9488", color = "white", bins = 25) +
+  geom_vline(xintercept = params$threshold, color = "#DC2626", 
+             linewidth = 1, linetype = "dashed") +
+  annotate("text", x = params$threshold + 0.5, y = Inf, 
+           label = paste("Threshold:", params$threshold, "ng/mL"),
+           vjust = 2, hjust = 0, color = "#DC2626", size = 3.5) +
+  labs(title = paste(params$chemical, "Serum Concentrations"),
+       x = paste(params$chemical, "(ng/mL)"),
+       y = "Count") +
+  theme_minimal()
+```
+
+## Re-Rendering with Different Parameters
+
+You can knit the same report with different parameter values:
+
+```{r rerender, eval=FALSE}
+# Render for PFOS instead of PFOA, with a different threshold
+rmarkdown::render(
+  "05_scientific_writing.Rmd",
+  params = list(chemical = "PFOS", threshold = 6.0, study_year = 2025),
+  output_file = "report_PFOS_2025.html"
+)
+```
+
+This means one `.Rmd` file can generate reports for every chemical, every year,
+every site — automatically. Imagine generating 50 site reports from a single
+template!
+
+## The "Knit with Parameters" Button
+
+In RStudio, click the dropdown arrow next to the **Knit** button and select
+**"Knit with Parameters..."** to get a dialog where you can fill in parameter
+values interactively.
+
+
+# Tabbed Sections {.tabset}
+
+In HTML output, you can organize content into tabs by adding `{.tabset}` to a
+heading. This is useful for showing related but alternative content.
+
+## PFAS Overview
+
+PFAS (per- and polyfluoroalkyl substances) are a group of manufactured
+chemicals used since the 1940s in various industrial and consumer products.
+
+## Exposure Routes
+
+Common exposure routes include contaminated drinking water, food packaging,
+and occupational exposure in manufacturing facilities.
+
+## Health Effects
+
+NIEHS-funded research has linked PFAS exposure to immune system effects,
+thyroid disease, liver damage, and certain cancers.
+
+# {.unnumbered .unlisted}
+
+(The tabs above demonstrate the `.tabset` feature.)
+
+
+# Callout Blocks and Special Formatting
+
+While R Markdown doesn't have built-in callout boxes, you can create them with
+simple HTML or use custom CSS:
+
+<div style="padding: 12px; background-color: #F0FDF4; border-left: 4px solid #0D9488; margin: 16px 0;">
+**Tip:** When writing a methods section, describe the statistical analysis in
+enough detail that another researcher could replicate it from your report alone.
+</div>
+
+<div style="padding: 12px; background-color: #FEF3C7; border-left: 4px solid #D97706; margin: 16px 0;">
+**Warning:** Never include personally identifiable information (PII) or
+protected health information (PHI) in R Markdown documents that will be shared
+or committed to version control.
+</div>
+
+
+# Images from Files
+
+To include an external image (e.g., a diagram, a microscopy photo, a logo):
+
+**Markdown syntax:**
+
+```
+![Caption text](path/to/image.png)
+```
+
+**R chunk syntax** (gives you more control over size):
+
+````
+```{r, out.width="50%", fig.cap="Figure: Exposure pathway diagram"}`r ''`
+knitr::include_graphics("path/to/image.png")
+```
+````
+
+The chunk method is preferred because you can use `out.width`, `fig.align`,
+`fig.cap`, and other chunk options to control the appearance.
+
+
+# Bibliographies and Citations
+
+R Markdown supports proper academic citations using a `.bib` file.
+
+## Setting Up Citations
+
+1. Create a BibTeX file (e.g., `references.bib`) with your references
+2. Point to it in the YAML header
+
+````yaml
+---
+title: "My Report"
+bibliography: references.bib
+csl: apa.csl
+---
+````
+
+A BibTeX entry looks like this:
+
+````
+@article{smith2023pfas,
+  title = {PFAS Exposure and Health Outcomes},
+  author = {Smith, Jane and Doe, John},
+  journal = {Environmental Health Perspectives},
+  year = {2023},
+  volume = {131},
+  pages = {1--12},
+  doi = {10.1289/EHP12345}
+}
+````
+
+## Citing in Text
+
+- `@smith2023pfas` → Smith and Doe (2023)
+- `[@smith2023pfas]` → (Smith and Doe, 2023)
+- `[@smith2023pfas; @jones2024bpa]` → (Smith and Doe, 2023; Jones, 2024)
+- `[-@smith2023pfas]` → (2023) — suppress author name
+
+A **References** section is automatically generated at the end of the document.
+
+## Citation Style
+
+Download a CSL (Citation Style Language) file for your target journal from
+[zotero.org/styles](https://www.zotero.org/styles) and specify it in the YAML:
+
+````yaml
+csl: environmental-health-perspectives.csl
+````
+
+> **Practical tip for this workshop:** We won't create a `.bib` file today,
+> but knowing this system exists means you can adopt it for manuscripts. Tools
+> like Zotero can export `.bib` files directly.
+
+
+# Exercise 5.1: Write an Equation and Use Parameters {.unnumbered}
+
+**Hands-on practice (5 minutes):**
+
+1. Write the equation for the **odds ratio** using LaTeX display math:
+   $OR = \frac{a/b}{c/d}$ (make it display-style with `$$`)
+2. In this file's YAML, change `chemical` to `"PFOS"` and `threshold` to `6.0`
+3. Re-knit and observe how the text, plot, and statistics all update
+
+---
+
+**Next up:** `06_output_formats.Rmd` — HTML themes, Word, PDF, and more.

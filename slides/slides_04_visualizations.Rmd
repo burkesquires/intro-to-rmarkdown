@@ -1,0 +1,166 @@
+---
+title: "Module 4: Visualizations & Figure Control"
+subtitle: "Publication-Quality Figures in R Markdown"
+author: "NIEHS Training"
+date: "`r Sys.Date()`"
+output:
+  ioslides_presentation:
+    widescreen: true
+    css: rmd_slides_style.css
+    self_contained: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      comment = "", fig.height = 2.8, fig.width = 7,
+                      fig.align = "center", dpi = 150)
+library(tidyverse)
+```
+
+```{r data, include=FALSE}
+set.seed(42)
+n <- 200
+bio <- data.frame(
+  age = round(rnorm(n, 48, 14)),
+  sex = sample(c("Female", "Male"), n, replace = TRUE, prob = c(.55,.45)),
+  pfoa = round(rlnorm(n, 0.8, 0.9), 2),
+  cholesterol = round(rnorm(n, 210, 38)),
+  site = sample(c("RTP", "Durham", "Chapel Hill"), n, replace = TRUE))
+```
+
+# Figures Are Code {.segue}
+
+## The R Markdown Advantage
+
+No more:
+
+1. Make a plot in R
+2. Save as PNG
+3. Paste into Word
+4. Data changes → repeat steps 1–3 for every figure 😩
+
+With R Markdown: **the plot IS the code**. Re-knit and everything updates.
+
+## Basic ggplot
+
+```{r basic-plot, fig.height=2.8}
+ggplot(bio, aes(x = pfoa, y = cholesterol)) +
+  geom_point(alpha = 0.5) +
+  labs(title = "PFOA vs. Cholesterol", 
+       x = "PFOA (ng/mL)", y = "Cholesterol (mg/dL)")
+```
+
+## Publication-Quality Plot
+
+```{r pub-plot, fig.height=2.6}
+ggplot(bio, aes(x = pfoa, y = cholesterol, color = sex)) +
+  geom_point(alpha = 0.6, size = 1.5) +
+  geom_smooth(method = "lm", se = TRUE, linewidth = 0.8) +
+  scale_x_log10() +
+  scale_color_manual(values = c("Female" = "#3182CE", "Male" = "#805AD5")) +
+  labs(title = "Serum PFOA vs. Total Cholesterol",
+       x = "Serum PFOA (ng/mL, log)", y = "Cholesterol (mg/dL)",
+       color = "Sex") +
+  theme_minimal(base_size = 11) + theme(legend.position = "bottom")
+```
+
+# Figure Chunk Options {.segue}
+
+## Controlling Size and Appearance
+
+| Option | Purpose | Example |
+|--------|---------|---------|
+| `fig.width` | Width in inches | `fig.width=8` |
+| `fig.height` | Height in inches | `fig.height=3` |
+| `fig.align` | Alignment | `"center"` |
+| `dpi` | Resolution | `150` report, `300` publication |
+| `fig.cap` | Caption text | `"Figure 1. My caption"` |
+| `out.width` | Display width | `"80%"`, `"500px"` |
+
+> `fig.width/height` = creation size. `out.width` = display size.
+
+## Narrow and Tall
+
+```{r narrow, fig.width=3.5, fig.height=3}
+ggplot(bio, aes(x = sex, y = pfoa, fill = sex)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = c("#3182CE", "#805AD5")) +
+  scale_y_log10() + labs(y = "PFOA (ng/mL)", x = NULL) +
+  theme_minimal() + theme(legend.position = "none")
+```
+
+## Wide and Short
+
+```{r wide, fig.width=10, fig.height=2.5}
+ggplot(bio, aes(x = age, y = cholesterol)) +
+  geom_point(alpha = 0.3, color = "#4A5568") +
+  geom_smooth(method = "loess", color = "#3182CE") +
+  facet_wrap(~site, nrow = 1) +
+  labs(x = "Age", y = "Cholesterol (mg/dL)") + theme_minimal(base_size = 9)
+```
+
+## Figure Captions
+
+Use the `fig.cap` chunk option:
+
+````
+```{r, fig.cap="**Figure 1.** PFOA by site."}`r ''`
+ggplot(bio, aes(x = site, y = pfoa)) + geom_boxplot()
+```
+````
+
+```{r captioned, fig.cap="**Figure 1.** PFOA concentration by monitoring site.", echo=FALSE, fig.height=2.5}
+ggplot(bio, aes(x = site, y = pfoa, fill = site)) +
+  geom_boxplot(alpha = 0.7) + scale_fill_brewer(palette = "Set2") +
+  scale_y_log10() + labs(x = NULL, y = "PFOA (ng/mL, log)") +
+  theme_minimal() + theme(legend.position = "none")
+```
+
+## Multi-Panel with `patchwork`
+
+```{r patchwork, fig.width=9, fig.height=2.5}
+library(patchwork)
+p1 <- ggplot(bio, aes(x = pfoa)) +
+  geom_histogram(fill = "#3182CE", color = "white", bins = 25) +
+  scale_x_log10() + labs(title = "A", x = "PFOA", y = "Count") + theme_minimal(base_size = 9)
+p2 <- ggplot(bio, aes(x = pfoa, y = cholesterol)) +
+  geom_point(alpha = 0.3) + geom_smooth(method = "lm", color = "#E53E3E") +
+  scale_x_log10() + labs(title = "B", x = "PFOA", y = "Cholesterol") + theme_minimal(base_size = 9)
+p1 + p2
+```
+
+## Interactive Plots with `plotly`
+
+```{r plotly, fig.height=2.5}
+library(plotly)
+p <- ggplot(bio, aes(x = pfoa, y = cholesterol, color = sex,
+                      text = paste("Age:", age))) +
+  geom_point(alpha = 0.5) + scale_x_log10() +
+  scale_color_manual(values = c("#3182CE","#805AD5")) +
+  theme_minimal(base_size = 10)
+ggplotly(p, tooltip = c("text", "x", "y"), height = 280)
+```
+
+> **Hover** over points! Only works in HTML output.
+
+## Saving Figures for Manuscripts
+
+```r
+ggsave("output/figures/fig1_pfoa_cholesterol.png",
+       width = 7, height = 5, dpi = 300)
+
+# For journals requiring TIFF:
+ggsave("output/figures/figure1.tiff",
+       width = 7, height = 5, dpi = 300, compression = "lzw")
+```
+
+## Exercise 4.1: Multi-Panel Figure
+
+Create two panels side by side:
+
+- **A:** Histogram of `cholesterol`
+- **B:** Scatterplot of `age` vs `cholesterol` colored by `sex`
+
+Use `patchwork`. Set `fig.width=10, fig.height=3`. Add `fig.cap`.
+
+**Time: 5 minutes**

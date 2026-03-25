@@ -1,0 +1,297 @@
+---
+title: "Module 6: Output Formats, Themes, and Templates"
+subtitle: "HTML, Word, PDF, and Beyond"
+author: "NIEHS Training"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 3
+    number_sections: true
+    code_folding: hide
+    df_print: kable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(tidyverse)
+library(knitr)
+```
+
+# Output Formats Overview
+
+The `output` field in your YAML header determines the format of the knitted
+document. R Markdown supports many output types.
+
+## The Big Three
+
+| Format | YAML value | Best for |
+|--------|-----------|----------|
+| HTML | `html_document` | Interactive reports, sharing online |
+| Word | `word_document` | Manuscripts, institutional reports |
+| PDF | `pdf_document` | Formal publications (requires LaTeX) |
+
+
+# HTML Output Options
+
+HTML is the most flexible output format. This entire training uses it.
+
+## Themes
+
+R Markdown includes several built-in Bootstrap themes. Change the `theme`
+field in the YAML header:
+
+Available themes: `default`, `bootstrap`, `cerulean`, `cosmo`, `darkly`,
+`flatly`, `journal`, `lumen`, `paper`, `readable`, `sandstone`, `simplex`,
+`spacelab`, `united`, `yeti`
+
+````yaml
+output:
+  html_document:
+    theme: flatly    # Try changing this to "journal" or "cosmo"
+````
+
+## Syntax Highlighting
+
+Control how code chunks are colored with the `highlight` option:
+
+Available styles: `default`, `tango`, `pygments`, `kate`, `monochrome`,
+`espresso`, `zenburn`, `haddock`, `breezedark`
+
+````yaml
+output:
+  html_document:
+    highlight: tango
+````
+
+## Table of Contents
+
+```yaml
+output:
+  html_document:
+    toc: true            # Enable table of contents
+    toc_float: true      # Float it on the left side
+    toc_depth: 3         # How many heading levels to include
+    number_sections: true # Number the sections
+```
+
+The floating TOC on the left side of this document is configured exactly this
+way.
+
+## Code Folding
+
+The `code_folding` option lets readers show/hide code:
+
+````yaml
+output:
+  html_document:
+    code_folding: hide    # Code hidden by default, click to show
+    # code_folding: show  # Code shown by default, click to hide
+````
+
+**Notice** the "Code" buttons on the chunks in this document — they let you
+toggle code visibility. This file uses `code_folding: hide`.
+
+## Data Frame Printing
+
+Control how data frames appear by default:
+
+````yaml
+output:
+  html_document:
+    df_print: kable     # Use kable formatting automatically
+    # df_print: paged   # Paginated HTML tables
+    # df_print: default # Plain text
+````
+
+```{r df-print-demo}
+# With df_print: kable, this automatically renders as a styled table
+head(mtcars[, 1:6])
+```
+
+
+# Word Output
+
+Word output is essential for many NIEHS workflows — manuscript drafts,
+institutional reports, and documents for non-R-using collaborators.
+
+## Basic Word Output
+
+````yaml
+---
+title: "My Report"
+output: word_document
+---
+````
+
+## Word with a Reference Document (Template)
+
+You can apply your institution's formatting by providing a Word template:
+
+````yaml
+output:
+  word_document:
+    reference_docx: "templates/niehs_template.docx"
+````
+
+**How to create a template:**
+
+1. Knit a basic `.Rmd` to Word
+2. Open the `.docx` file and modify the styles (heading fonts, colors, margins)
+3. Save this styled file as your template
+4. Point to it with `reference_docx`
+
+## Word Output Limitations
+
+- No interactive features (plotly, DT, tabsets)
+- No floating TOC
+- `kableExtra` styling is limited — stick with basic `kable()` for Word
+- Code folding is not available
+
+## Conditional Output
+
+You can write code that behaves differently depending on the output format:
+
+```{r conditional-output, eval=FALSE}
+if (knitr::is_html_output()) {
+  DT::datatable(my_data)  # Interactive table for HTML
+} else {
+  kable(my_data)           # Static table for Word/PDF
+}
+```
+
+
+# PDF Output
+
+PDF output uses LaTeX under the hood and produces beautifully typeset documents.
+
+## Basic PDF Output
+
+````yaml
+---
+title: "My Report"
+output: pdf_document
+---
+````
+
+## Posit Cloud and PDF
+
+To knit to PDF on Posit Cloud, you need TinyTeX installed:
+
+```{r install-tinytex-reminder, eval=FALSE}
+install.packages("tinytex")
+tinytex::install_tinytex()
+```
+
+> **For this workshop, we recommend HTML output.** PDF is optional and can be
+> set up later. If you encounter LaTeX errors, switch back to `html_document`.
+
+## PDF Options
+
+````yaml
+output:
+  pdf_document:
+    toc: true
+    number_sections: true
+    fig_caption: true
+    latex_engine: xelatex   # Better Unicode support
+    keep_tex: false          # Set TRUE to debug LaTeX issues
+````
+
+
+# Multiple Output Formats
+
+You can specify multiple output formats in one YAML header:
+
+````yaml
+output:
+  html_document:
+    theme: flatly
+    toc: true
+    toc_float: true
+  word_document:
+    reference_docx: "template.docx"
+  pdf_document:
+    toc: true
+````
+
+The **Knit** button dropdown lets you choose which format to render.
+
+
+# Useful YAML Options Reference
+
+Here is a comprehensive YAML configuration for a polished HTML report:
+
+````yaml
+---
+title: "Dose-Response Analysis of PFAS Exposure in the Triangle Region"
+subtitle: "Supplementary Analysis Report"
+author:
+  - "Jane Smith, Ph.D. — Biostatistics Branch, NIEHS"
+  - "John Doe, Ph.D. — Epidemiology Branch, NIEHS"
+date: "Report generated: `r knitr::inline_expr('format(Sys.Date(), \"%B %d, %Y\")')`"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    toc_depth: 3
+    number_sections: true
+    code_folding: hide
+    df_print: kable
+    fig_caption: true
+params:
+  data_file: "data/pfas_2024.csv"
+  alpha: 0.05
+---
+````
+
+
+# Custom CSS (Advanced)
+
+For full control over appearance, you can add custom CSS:
+
+````yaml
+output:
+  html_document:
+    css: custom_styles.css
+````
+
+Or embed CSS directly in your `.Rmd`:
+
+```{css custom-css, echo=TRUE}
+/* Make the title green */
+.title {
+  color: #1B5E4B;
+}
+
+/* Style block quotes */
+blockquote {
+  border-left: 4px solid #0D9488;
+  padding-left: 12px;
+  color: #475569;
+}
+```
+
+
+# Exercise 6.1: Experiment with Output Options {.unnumbered}
+
+**Hands-on practice (3 minutes):**
+
+1. In this file's YAML, change `theme: flatly` to `theme: journal`
+2. Change `code_folding: hide` to `code_folding: show`
+3. Knit and observe the differences
+4. Try `theme: darkly` for a dark mode experience
+5. Change back when you're done
+
+---
+
+**Next up:** `07_capstone_exercise.Rmd` — put everything together!

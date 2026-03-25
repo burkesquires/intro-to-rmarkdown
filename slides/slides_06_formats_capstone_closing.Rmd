@@ -1,0 +1,261 @@
+---
+title: "Module 6–7: Output Formats & Capstone"
+subtitle: "HTML, Word, PDF, Themes — Then Build a Complete Report"
+author: "NIEHS Training"
+date: "`r Sys.Date()`"
+output:
+  ioslides_presentation:
+    widescreen: true
+    css: rmd_slides_style.css
+    self_contained: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, comment = "")
+```
+
+# Output Formats {.segue}
+
+## The Big Three
+
+| Format | YAML | Best for |
+|--------|------|----------|
+| **HTML** | `html_document` | Interactive, sharing online |
+| **Word** | `word_document` | Manuscripts, institutional reports |
+| **PDF** | `pdf_document` | Formal publications (needs LaTeX) |
+
+> We use HTML for this workshop. It's fastest, needs no extra setup, and
+> supports interactive features.
+
+## HTML Themes
+
+Change `theme:` in the YAML to instantly restyle:
+
+```yaml
+output:
+  html_document:
+    theme: flatly
+```
+
+Built-in themes: `default`, `bootstrap`, `cerulean`, `cosmo`, `darkly`,
+`flatly`, `journal`, `lumen`, `paper`, `readable`, `sandstone`, `simplex`,
+`spacelab`, `united`, `yeti`
+
+> **Exercise:** Change `theme: flatly` to `theme: journal`, re-knit, see the difference.
+
+## Syntax Highlighting
+
+Control code coloring:
+
+```yaml
+output:
+  html_document:
+    highlight: tango
+```
+
+Styles: `default`, `tango`, `pygments`, `kate`, `monochrome`, `espresso`,
+`zenburn`, `haddock`, `breezedark`
+
+## Table of Contents
+
+```yaml
+output:
+  html_document:
+    toc: true            # Enable TOC
+    toc_float: true      # Floating sidebar TOC
+    toc_depth: 3         # Include H1–H3
+    number_sections: true
+```
+
+The floating TOC you've seen in every notebook today is configured this way.
+
+## Code Folding
+
+Let readers show/hide code on demand:
+
+```yaml
+output:
+  html_document:
+    code_folding: hide    # Hidden by default, click to show
+    # or: show            # Shown by default, click to hide
+```
+
+> Perfect for reports shared with non-coders who want results but may want
+> to peek at the code.
+
+## Data Frame Printing
+
+```yaml
+output:
+  html_document:
+    df_print: kable     # Auto-style data frames as tables
+    # or: paged          # Paginated HTML tables
+    # or: default        # Plain text
+```
+
+## Word Output
+
+```yaml
+output: word_document
+```
+
+### With a template:
+
+```yaml
+output:
+  word_document:
+    reference_docx: "templates/niehs_template.docx"
+```
+
+Create a template: Knit a basic Rmd to Word → modify styles → save as template.
+
+**Limitations:** No interactive tables, no plotly, no code folding, no floating TOC.
+
+## PDF Output
+
+```yaml
+output: pdf_document
+```
+
+Requires LaTeX. On Posit Cloud:
+
+```r
+install.packages("tinytex")
+tinytex::install_tinytex()  # Takes several minutes
+```
+
+> Stick with HTML for this workshop. Set up PDF later if needed.
+
+## Multiple Formats in One YAML
+
+```yaml
+output:
+  html_document:
+    theme: flatly
+    toc: true
+    toc_float: true
+  word_document:
+    reference_docx: "template.docx"
+  pdf_document:
+    toc: true
+```
+
+The **Knit dropdown** lets you choose which format.
+
+## Polished YAML — Full Example
+
+```yaml
+---
+title: "PFAS Dose-Response Analysis"
+subtitle: "Supplementary Methods"
+author:
+  - "Jane Smith, Ph.D. — Biostatistics, NIEHS"
+  - "John Doe, Ph.D. — Epidemiology, NIEHS"
+date: "`r knitr::inline_expr('format(Sys.Date(), \"%B %d, %Y\")')`"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_folding: hide
+    df_print: kable
+params:
+  data_file: "data/pfas_2024.csv"
+---
+```
+
+## Custom CSS
+
+For full control over appearance:
+
+```yaml
+output:
+  html_document:
+    css: custom_styles.css
+```
+
+Or embed CSS directly in the `.Rmd`:
+
+````
+```{css, echo=FALSE}`r ''`
+.title { color: #1a365d; }
+blockquote {
+  border-left: 4px solid #3182CE;
+  background-color: #EBF8FF;
+}
+```
+````
+
+# Capstone Exercise {.segue}
+
+## Build a Complete Analysis Report | 20 min
+
+Open **`07_capstone_exercise.Rmd`** and fill in the sections:
+
+1. **YAML:** Change author to your name
+2. **Introduction:** 2–3 sentences with **bold** and *italic*
+3. **Methods:** Describe the model; write the equation with `$$`
+4. **Descriptive table:** `group_by() %>% summarise()` → `kable()`
+5. **Tabbed section:** Histogram + Boxplot in separate tabs
+6. **Regression:** `lm()` → `broom::tidy()` → `kable()`
+7. **Figure:** Scatterplot with `geom_smooth()` and `fig.cap`
+8. **Discussion:** Interpret results using **inline code**
+
+> The data is pre-generated in the notebook. You just fill in the analysis.
+
+## Skills You'll Practice
+
+| Skill | Where |
+|-------|-------|
+| YAML configuration | Header |
+| Markdown formatting | Introduction, Discussion |
+| Code chunks with options | Throughout |
+| Inline code | Methods, Discussion |
+| `kable()` + `kableExtra` | Descriptive table, Regression |
+| `ggplot2` + figure options | Histogram, Boxplot, Scatterplot |
+| LaTeX equations | Methods section |
+| Tabbed sections | Exposure Distribution |
+| `code_folding: hide` | YAML setting |
+
+# You're an R Markdown Author Now! {.segue}
+
+## Today You Learned
+
+✅ Create R Markdown documents with YAML, Markdown, and code chunks
+
+✅ Control output with chunk options (`echo`, `eval`, `include`)
+
+✅ Report statistics dynamically with inline code
+
+✅ Build publication-quality tables with `kable()` and `kableExtra`
+
+✅ Create and size figures with `ggplot2`, `patchwork`, and `plotly`
+
+✅ Write equations, use parameters, and add citations
+
+✅ Produce HTML, Word, and PDF output with themes
+
+## Resources
+
+| Resource | URL |
+|----------|-----|
+| R Markdown: The Definitive Guide | bookdown.org/yihui/rmarkdown |
+| R Markdown Cookbook | bookdown.org/yihui/rmarkdown-cookbook |
+| R Markdown Cheat Sheet | rstudio.com/resources/cheatsheets |
+| Posit Cloud Docs | docs.posit.co/cloud |
+| kableExtra vignettes | haozhu233.github.io/kableExtra |
+
+## Quick Reference
+
+| Action | Shortcut |
+|--------|----------|
+| Knit document | `Ctrl+Shift+K` |
+| Insert chunk | `Ctrl+Alt+I` |
+| Run chunk | `Ctrl+Shift+Enter` |
+| Run line | `Ctrl+Enter` |
+| Inline code | `` `r knitr::inline_expr('expr')` `` |
+| Bold | `**text**` |
+| Italic | `*text*` |
+| Display equation | `$$..$$` |

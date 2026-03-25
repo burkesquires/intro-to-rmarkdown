@@ -1,0 +1,178 @@
+---
+title: "Module 5: Scientific Writing in R Markdown"
+subtitle: "Equations, Parameters, Citations, and Tabs"
+author: "NIEHS Training"
+date: "`r Sys.Date()`"
+output:
+  ioslides_presentation:
+    widescreen: true
+    css: rmd_slides_style.css
+    self_contained: true
+params:
+  chemical: "PFOA"
+  threshold: 4.0
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      comment = "", fig.height = 2.8, fig.width = 7,
+                      fig.align = "center")
+library(tidyverse)
+```
+
+# LaTeX Equations {.segue}
+
+## Inline Equations
+
+Surround with single `$`:
+
+| Syntax | Renders as |
+|--------|-----------|
+| `$\alpha = 0.05$` | $\alpha = 0.05$ |
+| `$R^2 = 0.87$` | $R^2 = 0.87$ |
+| `$\beta_1 = 0.42$` | $\beta_1 = 0.42$ |
+| `$p < 0.001$` | $p < 0.001$ |
+| `$\mu \pm \sigma$` | $\mu \pm \sigma$ |
+| `$\text{BMI} = \frac{kg}{m^2}$` | $\text{BMI} = \frac{kg}{m^2}$ |
+
+## Display Equations
+
+Surround with double `$$` for centered, large equations:
+
+```
+$$Y_i = \beta_0 + \beta_1 X_{i1} + \beta_2 X_{i2} + \epsilon_i$$
+```
+
+$$Y_i = \beta_0 + \beta_1 X_{i1} + \beta_2 X_{i2} + \epsilon_i$$
+
+## Equations for Environmental Health
+
+**Hazard Quotient:**
+
+$$\text{HQ} = \frac{\text{CDI}}{\text{RfD}}$$
+
+**Lifetime Average Daily Dose:**
+
+$$\text{LADD} = \frac{C \times IR \times EF \times ED}{BW \times AT}$$
+
+**Hill Dose-Response Model:**
+
+$$\text{Response} = \frac{E_{\max} \cdot C^n}{EC_{50}^n + C^n}$$
+
+# Parameterized Reports {.segue}
+
+## One Template, Many Reports
+
+Define parameters in the YAML:
+
+```yaml
+params:
+  chemical: "PFOA"
+  threshold: 4.0
+  study_year: 2024
+```
+
+Use anywhere: `params$chemical`, `params$threshold`
+
+## Live Demo
+
+This report analyzes **`r params$chemical`** with a threshold of
+**`r params$threshold` ng/mL**.
+
+```{r param-data, echo=FALSE, fig.height=2.3}
+set.seed(42)
+conc <- round(rlnorm(100, 0.8, 0.9), 2)
+n_above <- sum(conc > params$threshold)
+pct <- round(n_above / length(conc) * 100, 1)
+ggplot(data.frame(x = conc), aes(x = x)) +
+  geom_histogram(fill = "#3182CE", color = "white", bins = 25) +
+  geom_vline(xintercept = params$threshold, color = "#E53E3E",
+             linewidth = 1, linetype = "dashed") +
+  annotate("text", x = params$threshold + 0.5, y = Inf,
+           label = paste0(pct, "% above threshold"),
+           vjust = 2, hjust = 0, color = "#E53E3E", size = 3.5) +
+  labs(title = paste(params$chemical, "Distribution"),
+       x = paste(params$chemical, "(ng/mL)"), y = "Count") +
+  theme_minimal()
+```
+
+`r pct`% of participants exceeded the `r params$threshold` ng/mL threshold.
+
+## Re-Rendering with Different Parameters
+
+```r
+rmarkdown::render(
+  "my_report.Rmd",
+  params = list(chemical = "PFOS", threshold = 6.0),
+  output_file = "report_PFOS.html"
+)
+```
+
+**One `.Rmd` → 50 site reports, 10 chemical reports, etc.**
+
+Also: **Knit button dropdown → "Knit with Parameters..."** for an interactive dialog.
+
+# Tabbed Sections {.segue}
+
+## Organize Content with Tabs
+
+Add `{.tabset}` to a heading to turn sub-headings into tabs:
+
+```markdown
+## Results {.tabset}
+
+### Table
+(table content here)
+
+### Figure
+(figure content here)
+
+### Summary
+(summary content here)
+```
+
+Readers click tabs to switch between views. HTML output only.
+
+# Citations {.segue}
+
+## Proper Academic Citations
+
+1. Create a **BibTeX file** (`references.bib`):
+
+```bibtex
+@article{smith2023pfas,
+  title = {PFAS Exposure and Health Outcomes},
+  author = {Smith, Jane and Doe, John},
+  journal = {Environ Health Perspect},
+  year = {2023},
+  volume = {131}, pages = {1--12}
+}
+```
+
+2. Point to it in the YAML:
+
+```yaml
+bibliography: references.bib
+csl: apa.csl
+```
+
+## Citing in Text
+
+| Syntax | Result |
+|--------|--------|
+| `@smith2023pfas` | Smith and Doe (2023) |
+| `[@smith2023pfas]` | (Smith and Doe, 2023) |
+| `[@smith2023; @jones2024]` | (Smith, 2023; Jones, 2024) |
+| `[-@smith2023pfas]` | (2023) — suppress author |
+
+A **References** section is auto-generated at the document end.
+
+Download CSL files for specific journals from [zotero.org/styles](https://www.zotero.org/styles).
+
+## Exercise 5.1
+
+1. Write the odds ratio equation: $OR = \frac{a/b}{c/d}$ using `$$`
+2. Change `chemical` to `"PFOS"` and `threshold` to `6.0` in the YAML
+3. Re-knit and see everything update
+
+**Time: 5 minutes**

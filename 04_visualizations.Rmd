@@ -1,0 +1,278 @@
+---
+title: "Module 4: Visualizations and Figure Control"
+subtitle: "Publication-Quality Figures in R Markdown"
+author: "NIEHS Training"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: true
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, 
+  message = FALSE, 
+  warning = FALSE,
+  fig.width = 7,
+  fig.height = 5,
+  fig.align = "center",
+  dpi = 150
+)
+library(tidyverse)
+```
+
+# Figures in R Markdown
+
+One of the biggest advantages of R Markdown is that figures are generated
+directly from your code. No more saving PNGs and pasting them into Word —
+the plot IS the code.
+
+# Creating Figures with ggplot2
+
+Let's start with environmental health data and build up a publication-ready
+figure.
+
+```{r sample-data}
+# Simulated biomonitoring data
+set.seed(42)
+n <- 200
+biomarker_data <- data.frame(
+  participant_id = 1:n,
+  age = round(rnorm(n, 48, 14)),
+  sex = sample(c("Female", "Male"), n, replace = TRUE, prob = c(0.55, 0.45)),
+  pfoa_serum = round(rlnorm(n, meanlog = 0.8, sdlog = 0.9), 2),
+  cholesterol = round(rnorm(n, 210, 38)),
+  site = sample(c("Research Triangle Park", "Durham", "Chapel Hill"), 
+                n, replace = TRUE)
+)
+```
+
+## A Basic Plot
+
+```{r basic-plot}
+ggplot(biomarker_data, aes(x = pfoa_serum, y = cholesterol)) +
+  geom_point() +
+  labs(title = "PFOA Serum Concentration vs. Total Cholesterol",
+       x = "PFOA (ng/mL)",
+       y = "Total Cholesterol (mg/dL)")
+```
+
+## A Publication-Quality Plot
+
+```{r pub-quality}
+ggplot(biomarker_data, aes(x = pfoa_serum, y = cholesterol, color = sex)) +
+  geom_point(alpha = 0.6, size = 2) +
+  geom_smooth(method = "lm", se = TRUE, linewidth = 0.8) +
+  scale_x_log10() +
+  scale_color_manual(values = c("Female" = "#0D9488", "Male" = "#6366F1")) +
+  labs(
+    title = "Association Between Serum PFOA and Total Cholesterol",
+    subtitle = "Stratified by sex, N = 200",
+    x = "Serum PFOA (ng/mL, log scale)",
+    y = "Total Cholesterol (mg/dL)",
+    color = "Sex",
+    caption = "Data: Simulated biomonitoring study | NIEHS Training"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    legend.position = "bottom"
+  )
+```
+
+
+# Controlling Figure Size and Resolution
+
+Figure dimensions are set via chunk options. This is critical for getting
+figures that look right in your reports and manuscripts.
+
+## Key Figure Chunk Options
+
+| Option | Purpose | Default | Example |
+|--------|---------|---------|---------|
+| `fig.width` | Width in inches | 7 | `fig.width=8` |
+| `fig.height` | Height in inches | 5 | `fig.height=4` |
+| `fig.align` | Alignment | `"default"` | `"center"`, `"left"`, `"right"` |
+| `dpi` | Resolution (dots per inch) | 72 | `150` for reports, `300` for publication |
+| `fig.cap` | Figure caption | — | `"Figure 1. My caption"` |
+| `out.width` | Rendered width (CSS/LaTeX) | — | `"80%"`, `"500px"` |
+
+## Same Plot, Different Sizes
+
+Here is a narrow, tall figure:
+
+```{r fig-narrow, fig.width=4, fig.height=6}
+ggplot(biomarker_data, aes(x = sex, y = pfoa_serum, fill = sex)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = c("#0D9488", "#6366F1")) +
+  scale_y_log10() +
+  labs(y = "Serum PFOA (ng/mL)", x = NULL) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+And here is a wide, short figure:
+
+```{r fig-wide, fig.width=10, fig.height=3}
+ggplot(biomarker_data, aes(x = age, y = cholesterol)) +
+  geom_point(alpha = 0.4, color = "#475569") +
+  geom_smooth(method = "loess", color = "#0D9488") +
+  facet_wrap(~site, nrow = 1) +
+  labs(x = "Age (years)", y = "Total Cholesterol (mg/dL)") +
+  theme_minimal()
+```
+
+## Using `out.width` for HTML Scaling
+
+`fig.width` and `fig.height` control the *creation* size. `out.width` controls
+how large it *appears* in the rendered document:
+
+```{r scaled-down, fig.width=8, fig.height=6, out.width="60%"}
+ggplot(biomarker_data, aes(x = pfoa_serum)) +
+  geom_histogram(fill = "#0D9488", color = "white", bins = 30) +
+  scale_x_log10() +
+  labs(title = "Distribution of Serum PFOA",
+       x = "PFOA (ng/mL, log scale)", y = "Count") +
+  theme_minimal()
+```
+
+This figure was created at 8×6 inches but displayed at 60% width.
+
+
+# Figure Captions
+
+Use the `fig.cap` chunk option for proper figure captions:
+
+```{r captioned-figure, fig.cap="**Figure 1.** Serum PFOA concentration by monitoring site. Boxes show median and IQR; whiskers extend to 1.5× IQR.", fig.width=7, fig.height=4}
+ggplot(biomarker_data, aes(x = site, y = pfoa_serum, fill = site)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_brewer(palette = "Set2") +
+  scale_y_log10() +
+  labs(x = NULL, y = "Serum PFOA (ng/mL, log scale)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+
+# Multiple Plots in One Figure
+
+## Using `patchwork`
+
+The `patchwork` package combines separate ggplots into panels:
+
+```{r patchwork-demo, fig.width=10, fig.height=4}
+# install.packages("patchwork")  # Uncomment if needed
+library(patchwork)
+
+p1 <- ggplot(biomarker_data, aes(x = pfoa_serum)) +
+  geom_histogram(fill = "#0D9488", color = "white", bins = 25) +
+  scale_x_log10() +
+  labs(title = "A", x = "PFOA (ng/mL)", y = "Count") +
+  theme_minimal()
+
+p2 <- ggplot(biomarker_data, aes(x = pfoa_serum, y = cholesterol)) +
+  geom_point(alpha = 0.4, color = "#475569") +
+  geom_smooth(method = "lm", color = "#DC2626") +
+  scale_x_log10() +
+  labs(title = "B", x = "PFOA (ng/mL)", y = "Cholesterol (mg/dL)") +
+  theme_minimal()
+
+p1 + p2
+```
+
+## Using `facet_wrap` and `facet_grid`
+
+```{r faceted-plot, fig.width=8, fig.height=5}
+ggplot(biomarker_data, aes(x = age, y = cholesterol)) +
+  geom_point(alpha = 0.5, size = 1.5) +
+  geom_smooth(method = "lm", color = "#0D9488") +
+  facet_grid(sex ~ site) +
+  labs(
+    title = "Age vs. Cholesterol by Site and Sex",
+    x = "Age (years)", y = "Total Cholesterol (mg/dL)"
+  ) +
+  theme_bw(base_size = 10)
+```
+
+
+# Interactive Plots with plotly
+
+For HTML reports, `plotly` turns static ggplots into interactive figures where
+readers can hover, zoom, and pan.
+
+```{r plotly-demo, fig.width=7, fig.height=5}
+library(plotly)
+
+p <- ggplot(biomarker_data, aes(x = pfoa_serum, y = cholesterol, 
+                                 color = sex, text = paste("Age:", age))) +
+  geom_point(alpha = 0.6) +
+  scale_x_log10() +
+  scale_color_manual(values = c("#0D9488", "#6366F1")) +
+  labs(x = "PFOA (ng/mL)", y = "Cholesterol (mg/dL)") +
+  theme_minimal()
+
+ggplotly(p, tooltip = c("text", "x", "y"))
+```
+
+> **Hover over the points** to see individual data. Use the toolbar in the
+> upper right to zoom, pan, and download the image.
+
+> **Note:** `plotly` figures only work in HTML output. They will not appear in
+> Word or PDF.
+
+
+# Saving Figures
+
+Sometimes you need a figure file for a manuscript submission. Use `ggsave()`:
+
+```{r save-figure, eval=FALSE}
+# Save the last plot
+ggsave("output/figures/pfoa_cholesterol.png", 
+       width = 7, height = 5, dpi = 300)
+
+# Save a specific plot object
+ggsave("output/figures/panel_figure.png", 
+       plot = p1 + p2, 
+       width = 10, height = 4, dpi = 300)
+
+# For journals that require TIFF:
+ggsave("output/figures/figure1.tiff", 
+       width = 7, height = 5, dpi = 300, compression = "lzw")
+```
+
+
+# Exercise 4.1: Create a Multi-Panel Figure {.unnumbered}
+
+**Hands-on practice (5 minutes):**
+
+Using `biomarker_data`, create a figure with two panels side by side:
+
+- **Panel A:** A histogram of `cholesterol` values
+- **Panel B:** A scatterplot of `age` vs. `cholesterol` colored by `sex`
+
+Use `patchwork` to combine them. Set `fig.width=10, fig.height=4` in the
+chunk options. Add a figure caption with `fig.cap`.
+
+```{r exercise-figure, eval=FALSE, fig.width=10, fig.height=4}
+# Your code here
+panel_a <- ggplot(biomarker_data, aes(x = cholesterol)) +
+  # ... add layers ...
+  NULL
+
+panel_b <- ggplot(biomarker_data, aes(x = age, y = cholesterol)) +
+  # ... add layers ...
+  NULL
+
+# Combine with patchwork
+# panel_a + panel_b
+```
+
+
+---
+
+**Next up:** `05_scientific_writing.Rmd` — equations, citations, and parameters.

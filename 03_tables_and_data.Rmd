@@ -1,0 +1,253 @@
+---
+title: "Module 3: Tables and Data Display"
+subtitle: "From Raw Data to Publication-Quality Tables"
+author: "NIEHS Training"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: true
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+```
+
+# The Problem with Default R Output
+
+When you print a data frame in R Markdown, the default output is plain text — 
+functional, but not appropriate for reports or manuscripts.
+
+```{r default-output}
+# Simulated environmental monitoring data
+air_quality <- data.frame(
+  Site = c("Research Triangle", "Durham Central", "Chapel Hill", 
+           "Raleigh Downtown", "Morrisville"),
+  PM2.5_mean = c(8.2, 9.7, 7.4, 10.1, 8.8),
+  PM2.5_max = c(22.1, 31.4, 18.9, 35.7, 24.3),
+  Ozone_mean = c(0.042, 0.048, 0.039, 0.051, 0.044),
+  Days_AQI_Good = c(312, 287, 325, 271, 298)
+)
+
+# Default output — ugly in a report
+air_quality
+```
+
+Let's fix that.
+
+
+# Method 1: `knitr::kable()` — Simple and Reliable
+
+`kable()` is the workhorse table function in R Markdown. It is built into the
+`knitr` package and works with all output formats (HTML, Word, PDF).
+
+```{r kable-basic}
+kable(air_quality, 
+      caption = "Table 1. Annual Air Quality Summary for Triangle Region Sites")
+```
+
+## Improving `kable()` Output
+
+```{r kable-improved}
+kable(air_quality,
+      col.names = c("Monitoring Site", "Mean PM₂.₅ (µg/m³)", 
+                     "Max PM₂.₅ (µg/m³)", "Mean O₃ (ppm)", 
+                     "Days AQI 'Good'"),
+      digits = 3,
+      align = c("l", "r", "r", "r", "r"),
+      caption = "Table 1. Annual Air Quality Summary for Triangle Region Sites")
+```
+
+
+# Method 2: `kableExtra` — Publication-Quality Styling
+
+The `kableExtra` package extends `kable()` with powerful formatting options.
+It works best with HTML output.
+
+```{r kableextra-demo}
+kable(air_quality,
+      col.names = c("Monitoring Site", "Mean PM₂.₅ (µg/m³)", 
+                     "Max PM₂.₅ (µg/m³)", "Mean O₃ (ppm)", 
+                     "Days AQI 'Good'"),
+      digits = 3,
+      caption = "Table 1. Annual Air Quality Summary") %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed"),
+    full_width = FALSE,
+    position = "center"
+  ) %>%
+  row_spec(which(air_quality$PM2.5_max > 30), 
+           bold = TRUE, color = "#DC2626") %>%
+  footnote(general = "Sites exceeding 30 µg/m³ max PM₂.₅ shown in red.")
+```
+
+## Key `kable_styling()` Options
+
+| Option | Values | Purpose |
+|--------|--------|---------|
+| `bootstrap_options` | `"striped"`, `"hover"`, `"condensed"`, `"bordered"` | Visual style |
+| `full_width` | `TRUE` / `FALSE` | Stretch to full page width? |
+| `position` | `"center"`, `"left"`, `"right"`, `"float_right"` | Table alignment |
+| `font_size` | Number (e.g., 12) | Text size in points |
+
+## Adding Row and Column Formatting
+
+```{r kableextra-formatting}
+# Study results table
+results <- data.frame(
+  Exposure = c("PFOA (high)", "PFOA (low)", "PFOS (high)", "PFOS (low)"),
+  N = c(245, 251, 238, 258),
+  Beta = c(0.42, 0.18, 0.55, 0.22),
+  SE = c(0.11, 0.09, 0.13, 0.10),
+  P_value = c(0.0002, 0.048, 0.00003, 0.028)
+)
+
+results %>%
+  mutate(Significance = ifelse(P_value < 0.01, "**", 
+                               ifelse(P_value < 0.05, "*", ""))) %>%
+  kable(col.names = c("Exposure Group", "N", "β", "SE", "P-value", ""),
+        digits = c(0, 0, 2, 2, 4, 0),
+        caption = "Table 2. Association Between PFAS Exposure and Outcome") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"),
+                full_width = FALSE) %>%
+  add_header_above(c(" " = 2, "Regression Estimates" = 3, " " = 1)) %>%
+  footnote(symbol = c("p < 0.05", "p < 0.01"))
+```
+
+
+## Grouped Headers
+
+```{r grouped-header}
+# Comparison table
+comparison <- data.frame(
+  Chemical = c("PFOA", "PFOS", "BPA"),
+  Serum_N = c(482, 482, 475),
+  Serum_Mean = c(3.21, 5.87, NA),
+  Urine_N = c(NA, NA, 475),
+  Urine_Mean = c(NA, NA, 2.14)
+)
+
+kable(comparison,
+      col.names = c("Chemical", "N", "Mean (ng/mL)", "N", "Mean (µg/L)"),
+      digits = 2,
+      caption = "Table 3. Biomarker Concentrations by Matrix") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"), 
+                full_width = FALSE) %>%
+  add_header_above(c(" " = 1, "Serum" = 2, "Urine" = 2))
+```
+
+
+# Method 3: `DT::datatable()` — Interactive Tables
+
+For HTML output, `DT` provides searchable, sortable, and pageable tables.
+These are great for exploratory data and appendices.
+
+```{r dt-demo}
+library(DT)
+
+# Generate a larger dataset
+set.seed(42)
+participants <- data.frame(
+  ID = paste0("NIEHS-", sprintf("%04d", 1:50)),
+  Age = round(rnorm(50, 45, 12)),
+  Sex = sample(c("Female", "Male"), 50, replace = TRUE),
+  BMI = round(rnorm(50, 27, 4.5), 1),
+  PFOA_ng_mL = round(rlnorm(50, 1.2, 0.8), 2),
+  PFOS_ng_mL = round(rlnorm(50, 1.5, 0.7), 2),
+  Site = sample(c("RTP", "Durham", "Chapel Hill"), 50, replace = TRUE)
+)
+
+datatable(participants,
+          caption = "Participant Data (searchable and sortable)",
+          filter = "top",
+          options = list(pageLength = 10,
+                         autoWidth = TRUE)) %>%
+  formatRound(columns = c("PFOA_ng_mL", "PFOS_ng_mL"), digits = 2)
+```
+
+> **Note:** `DT` tables are interactive in HTML output only. They will not
+> appear in Word or PDF documents. For those formats, use `kable()` instead.
+
+
+# Displaying Model Output Cleanly
+
+Raw model output is messy. The `broom` package tidies it for table display.
+
+```{r model-output}
+library(broom)
+
+# Fit a simple model
+model <- lm(PFOA_ng_mL ~ Age + BMI + Sex, data = participants)
+
+# Raw output (ugly):
+# summary(model)
+
+# Tidy output with broom:
+tidy(model, conf.int = TRUE) %>%
+  mutate(across(where(is.numeric), ~round(., 3))) %>%
+  kable(col.names = c("Term", "Estimate", "SE", "Statistic", 
+                       "P-value", "Lower 95% CI", "Upper 95% CI"),
+        caption = "Table 4. Linear Regression: PFOA ~ Age + BMI + Sex") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"),
+                full_width = FALSE)
+```
+
+```{r model-fit}
+# Model fit statistics
+glance(model) %>%
+  select(r.squared, adj.r.squared, sigma, statistic, p.value, nobs) %>%
+  mutate(across(where(is.numeric), ~round(., 3))) %>%
+  kable(col.names = c("R²", "Adj. R²", "σ", "F", "P-value", "N"),
+        caption = "Model Fit Statistics") %>%
+  kable_styling(bootstrap_options = c("condensed"), full_width = FALSE)
+```
+
+
+# Exercise 3.1: Build a Summary Table {.unnumbered}
+
+**Hands-on practice (5 minutes):**
+
+Using the `participants` data created above, produce a summary table that shows
+the mean and SD of `Age`, `BMI`, `PFOA_ng_mL`, and `PFOS_ng_mL` grouped by
+`Sex`. Use `kable()` and `kable_styling()` to make it look professional.
+
+Starter code:
+
+```{r exercise-table, eval=FALSE}
+# Step 1: Summarize the data
+summary_table <- participants %>%
+  group_by(Sex) %>%
+  summarise(
+    N = n(),
+    `Mean Age` = round(mean(Age), 1),
+    `SD Age` = round(sd(Age), 1),
+    `Mean BMI` = round(mean(BMI), 1),
+    # Add PFOA and PFOS summaries here...
+  )
+
+# Step 2: Display with kable
+summary_table %>%
+  kable(caption = "YOUR CAPTION HERE") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE)
+```
+
+
+# When to Use Which Table Method
+
+| Method | Best for | Output formats |
+|--------|----------|----------------|
+| `kable()` | Simple, reliable tables | HTML, Word, PDF |
+| `kableExtra` | Styled, publication-quality tables | HTML (best), PDF |
+| `DT::datatable()` | Interactive exploration, appendices | HTML only |
+| `gt` package | Highly customized tables | HTML, PDF |
+
+---
+
+**Next up:** `04_visualizations.Rmd` — figures and plots in R Markdown.

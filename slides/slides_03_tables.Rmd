@@ -1,0 +1,151 @@
+---
+title: "Module 3: Tables & Data Display"
+subtitle: "From Raw Data to Publication-Quality Tables"
+author: "NIEHS Training"
+date: "`r Sys.Date()`"
+output:
+  ioslides_presentation:
+    widescreen: true
+    css: rmd_slides_style.css
+    self_contained: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      comment = "", fig.height = 2.8, fig.width = 6)
+library(tidyverse); library(knitr); library(kableExtra)
+```
+
+# The Problem {.segue}
+
+## Default R Output is Ugly
+
+```{r default-output}
+air_quality <- data.frame(
+  Site = c("RTP", "Durham", "Chapel Hill", "Raleigh"),
+  PM2.5_mean = c(8.2, 9.7, 7.4, 10.1),
+  PM2.5_max = c(22.1, 31.4, 18.9, 35.7),
+  Days_Good = c(312, 287, 325, 271)
+)
+air_quality  # raw output — fine for console, ugly in a report
+```
+
+Fine for exploration. Not acceptable for a report.
+
+# Method 1: `knitr::kable()` {.segue}
+
+## Simple and Reliable
+
+```{r kable-basic}
+kable(air_quality,
+      col.names = c("Site", "Mean PM₂.₅", "Max PM₂.₅", "Good AQI Days"),
+      digits = 1,
+      caption = "Table 1. Air Quality Summary")
+```
+
+Works with **all** output formats: HTML, Word, PDF.
+
+# Method 2: `kableExtra` {.segue}
+
+## Publication-Quality Styling
+
+```{r kableextra-demo}
+kable(air_quality,
+      col.names = c("Site", "Mean PM₂.₅", "Max PM₂.₅", "Good Days"),
+      digits = 1, caption = "Annual Air Quality Summary") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE, position = "center") %>%
+  row_spec(which(air_quality$PM2.5_max > 30), 
+           bold = TRUE, color = "#DC2626") %>%
+  footnote(general = "Sites with max PM₂.₅ > 30 µg/m³ in red.")
+```
+
+## Key `kable_styling()` Options
+
+| Option | Values | Purpose |
+|--------|--------|---------|
+| `bootstrap_options` | `"striped"`, `"hover"`, `"condensed"` | Visual style |
+| `full_width` | `TRUE`/`FALSE` | Stretch to page? |
+| `position` | `"center"`, `"left"`, `"float_right"` | Alignment |
+| `font_size` | Number | Text size |
+
+## Grouped Headers
+
+```{r grouped}
+results <- data.frame(
+  Term = c("PFOA (high)", "PFOA (low)", "PFOS (high)"),
+  N = c(245, 251, 238),
+  Beta = c(0.42, 0.18, 0.55), SE = c(0.11, 0.09, 0.13),
+  P = c(0.0002, 0.048, 0.00003))
+kable(results, digits = c(0,0,2,2,4),
+      col.names = c("Exposure", "N", "β", "SE", "P-value")) %>%
+  kable_styling(bootstrap_options = c("striped","hover"),
+                full_width = FALSE) %>%
+  add_header_above(c(" " = 2, "Estimates" = 3))
+```
+
+# Method 3: `DT::datatable()` {.segue}
+
+## Interactive Tables (HTML Only)
+
+```{r dt-demo}
+library(DT)
+set.seed(42)
+participants <- data.frame(
+  ID = paste0("NIEHS-", sprintf("%03d", 1:20)),
+  Age = round(rnorm(20, 45, 12)),
+  PFOA = round(rlnorm(20, 1.2, 0.8), 2),
+  Site = sample(c("RTP", "Durham"), 20, replace = TRUE))
+datatable(participants, filter = "top",
+          options = list(pageLength = 4, dom = 'ftp',
+                         scrollY = "200px")) %>%
+  formatRound("PFOA", 2)
+```
+
+<div class="notes">
+DT tables are searchable, sortable, and pageable. Great for appendices.
+Only works in HTML — not Word or PDF.
+</div>
+
+# Model Output {.segue}
+
+## `broom` Makes Models Tidy
+
+```{r broom-demo}
+library(broom)
+model <- lm(PFOA ~ Age + Site, data = participants)
+
+tidy(model, conf.int = TRUE) %>%
+  mutate(across(where(is.numeric), ~round(., 3))) %>%
+  kable(col.names = c("Term", "Est.", "SE", "Stat", 
+                       "P", "Lower CI", "Upper CI")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover"),
+                full_width = FALSE)
+```
+
+## When to Use Which Method
+
+| Method | Best for | Formats |
+|--------|----------|---------|
+| `kable()` | Simple reliable tables | HTML, Word, PDF |
+| `kableExtra` | Publication-quality styling | HTML (best), PDF |
+| `DT::datatable()` | Interactive exploration | HTML only |
+| `gt` package | Highly customized | HTML, PDF |
+
+## Exercise 3.1: Summary Table
+
+Using the `participants` data, create a table showing mean and SD of
+Age and PFOA by Site. Use `kable()` + `kable_styling()`.
+
+```r
+participants %>%
+  group_by(Site) %>%
+  summarise(N = n(),
+            `Mean Age` = round(mean(Age), 1),
+            `Mean PFOA` = round(mean(PFOA), 2)) %>%
+  kable(caption = "Summary by Site") %>%
+  kable_styling(bootstrap_options = c("striped"), 
+                full_width = FALSE)
+```
+
+**Time: 5 minutes**
